@@ -1,6 +1,7 @@
-"""Database Seeder with realistic multi-agent team and active demo scenarios."""
+"""Database Seeder with realistic 18-agent multi-agent team and active modernization scenarios."""
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
+import json
 from sqlalchemy import select
 from app.core.db import (
     AsyncSessionLocal,
@@ -12,7 +13,11 @@ from app.core.db import (
     WorkflowRun,
     VmNode,
     SystemMetric,
-    AuditLog
+    AuditLog,
+    BaDiscussion,
+    RdSuggestion,
+    UiUxDesignSpec,
+    LegacyRegressionCheck
 )
 
 AGENTS_CONFIG = [
@@ -20,6 +25,7 @@ AGENTS_CONFIG = [
     {"id": "agent-pm", "name": "Alex Mercer", "role": "Project Manager", "parent_id": "agent-orchestrator"},
     {"id": "agent-ba", "name": "Elena Rostova", "role": "Product Analyst / Business Analyst", "parent_id": "agent-orchestrator"},
     {"id": "agent-rnd", "name": "Dr. Aris Vance", "role": "Thought / R&D Engineer", "parent_id": "agent-orchestrator"},
+    {"id": "agent-uiux", "name": "Aria Vance", "role": "UI/UX Design Engineer (Speed & Usability)", "parent_id": "agent-orchestrator"},
     {"id": "agent-architect", "name": "Marcus Kane", "role": "Chief Architect", "parent_id": "agent-orchestrator"},
     {"id": "agent-senior-1", "name": "Sarah Chen", "role": "Senior Engineer 1 (Backend & Core)", "parent_id": "agent-orchestrator"},
     {"id": "agent-senior-2", "name": "David Kim", "role": "Senior Engineer 2 (Frontend & Integration)", "parent_id": "agent-orchestrator"},
@@ -42,6 +48,8 @@ async def seed_demo_data():
         if res.scalars().first():
             return
 
+        now = datetime.now(timezone.utc)
+
         # 1. Projects
         proj = Project(
             id="proj-default",
@@ -49,11 +57,12 @@ async def seed_demo_data():
             repo_path="D:/Projects/SuperApp_V2",
             branch="main",
             description="Multi-tier microservices platform with authentication, payment gateway, and dashboard.",
-            status="ACTIVE"
+            status="ACTIVE",
+            created_at=now
         )
         db.add(proj)
 
-        # 2. Seed 17 Agents
+        # 2. Seed 18 Agents (including UI/UX Design Engineer)
         for a in AGENTS_CONFIG:
             agent = Agent(
                 id=a["id"],
@@ -61,10 +70,10 @@ async def seed_demo_data():
                 role=a["role"],
                 status="IDLE",
                 parent_id=a["parent_id"],
-                model="Gemini 1.5 Pro" if "Senior" in a["role"] or "Architect" in a["role"] or "Orchestrator" in a["role"] else "Gemini 1.5 Flash",
+                model="Gemini 1.5 Pro" if "Senior" in a["role"] or "Architect" in a["role"] or "Orchestrator" in a["role"] or "UI/UX" in a["role"] else "Gemini 1.5 Flash",
                 tasks_completed=4,
                 tasks_failed=0,
-                last_activity=datetime.utcnow()
+                last_activity=now
             )
             db.add(agent)
 
@@ -99,13 +108,13 @@ async def seed_demo_data():
             {
                 "id": "TASK-003",
                 "title": "Build Customer Registration & Login UI",
-                "goal": "Create accessible login/signup screens with form validation",
+                "goal": "Create accessible login/signup screens with form validation and touch ergonomics",
                 "status": "VERIFIED",
                 "priority": "MEDIUM",
-                "assigned_agent_id": "agent-senior-2",
+                "assigned_agent_id": "agent-uiux",
                 "dependencies": ["TASK-001"],
                 "commit_sha": "c3d4e5f6a1b2",
-                "acceptance_criteria": ["Responsive on mobile & desktop", "Zod schema client validation"],
+                "acceptance_criteria": ["Google clarity + Rapido speed compliance", "Zod schema client validation"],
                 "test_command": "npm test",
                 "test_passed": True
             },
@@ -178,15 +187,17 @@ async def seed_demo_data():
                 acceptance_criteria_json=str(t_info["acceptance_criteria"]).replace("'", '"'),
                 test_command=t_info["test_command"],
                 test_passed=t_info["test_passed"],
-                retries=0
+                retries=0,
+                created_at=now,
+                updated_at=now
             )
             db.add(t)
 
-        # 4. Seed Task Assignments (WHO assigns WHAT to WHOM)
+        # 4. Seed Task Assignments
         assignments = [
             ("TASK-001", "agent-orchestrator", "agent-architect", "Assign architectural spec definition"),
             ("TASK-002", "agent-orchestrator", "agent-senior-1", "Assign backend core implementation"),
-            ("TASK-003", "agent-orchestrator", "agent-senior-2", "Assign frontend integration"),
+            ("TASK-003", "agent-orchestrator", "agent-uiux", "Assign UI/UX interaction design & frontend screens"),
             ("TASK-004", "agent-orchestrator", "agent-qa", "Assign QA journey simulation"),
             ("TASK-005", "agent-orchestrator", "agent-devops", "Assign CI/CD pipeline automation"),
             ("TASK-006", "agent-orchestrator", "agent-vm-fleet", "Assign staging VM deployment"),
@@ -199,7 +210,7 @@ async def seed_demo_data():
                 to_agent_id=to_a,
                 status="COMPLETED" if task_id != "TASK-007" else "ASSIGNED",
                 rationale=rat,
-                assigned_at=datetime.utcnow()
+                assigned_at=now
             )
             db.add(asgn)
 
@@ -213,26 +224,27 @@ async def seed_demo_data():
             risk_summary="High impact production rollout affecting 50k active users. Includes DB migration for user sessions.",
             test_evidence="15 Unit Tests passed, 8 E2E journeys verified, Staging smoke tests 200 OK, 0 CVEs found.",
             rollback_plan="Immediate rollback to image digest sha256:7f83b16 (v1.1.9) via automated ansible script in < 45 seconds.",
-            status="PENDING"
+            status="PENDING",
+            created_at=now
         )
         db.add(appr)
 
         # 6. Seed VM Fleet
         vm_nodes = [
-            VmNode(id="vm-stage-01", alias="staging-api-primary", environment="staging", host="10.0.1.15", role="api", current_version="v1.2.0-rc", target_version="v1.2.0-rc", status="HEALTHY", is_simulated=True),
-            VmNode(id="vm-stage-02", alias="staging-worker-01", environment="staging", host="10.0.1.16", role="worker", current_version="v1.2.0-rc", target_version="v1.2.0-rc", status="HEALTHY", is_simulated=True),
-            VmNode(id="vm-prod-01", alias="prod-api-eu-central", environment="production", host="10.0.2.20", role="api", current_version="v1.1.9", target_version="v1.2.0", status="HEALTHY", is_simulated=True),
-            VmNode(id="vm-prod-02", alias="prod-api-us-east", environment="production", host="10.0.2.21", role="api", current_version="v1.1.9", target_version="v1.2.0", status="HEALTHY", is_simulated=True),
-            VmNode(id="vm-prod-03", alias="prod-db-replica-01", environment="production", host="10.0.2.35", role="database", current_version="v1.1.9", target_version="v1.2.0", status="DRIFT_DETECTED", drift_details="Config drift: max_connections=250 vs expected 500", is_simulated=True),
+            VmNode(id="vm-stage-01", alias="staging-api-primary", environment="staging", host="10.0.1.15", role="api", current_version="v1.2.0-rc", target_version="v1.2.0-rc", status="HEALTHY", is_simulated=True, last_sync_at=now),
+            VmNode(id="vm-stage-02", alias="staging-worker-01", environment="staging", host="10.0.1.16", role="worker", current_version="v1.2.0-rc", target_version="v1.2.0-rc", status="HEALTHY", is_simulated=True, last_sync_at=now),
+            VmNode(id="vm-prod-01", alias="prod-api-eu-central", environment="production", host="10.0.2.20", role="api", current_version="v1.1.9", target_version="v1.2.0", status="HEALTHY", is_simulated=True, last_sync_at=now),
+            VmNode(id="vm-prod-02", alias="prod-api-us-east", environment="production", host="10.0.2.21", role="api", current_version="v1.1.9", target_version="v1.2.0", status="HEALTHY", is_simulated=True, last_sync_at=now),
+            VmNode(id="vm-prod-03", alias="prod-db-replica-01", environment="production", host="10.0.2.35", role="database", current_version="v1.1.9", target_version="v1.2.0", status="DRIFT_DETECTED", drift_details="Config drift: max_connections=250 vs expected 500", is_simulated=True, last_sync_at=now),
         ]
         for node in vm_nodes:
             db.add(node)
 
         # 7. Seed GitHub Workflow Runs
         wf_runs = [
-            WorkflowRun(id="run-101", repo="SuperApp_V2", branch="main", commit_sha="a6b7c8d9e0f1", workflow_name="CI Test & Build", status="completed", conclusion="success", linked_task_id="TASK-005", simulated=True),
-            WorkflowRun(id="run-102", repo="SuperApp_V2", branch="feat/payment", commit_sha="3f8b1c4e9d0a", workflow_name="Integration E2E", status="completed", conclusion="failure", failed_step="Run Playwright E2E", failure_category="CODE_ERROR", linked_task_id="TASK-004", log_excerpt="AssertionError: Expected payment status APPROVED, received TIMEOUT", simulated=True),
-            WorkflowRun(id="run-103", repo="SuperApp_V2", branch="feat/cart", commit_sha="7e2d9a1c4b8f", workflow_name="Lint & Security", status="completed", conclusion="success", simulated=True)
+            WorkflowRun(id="run-101", repo="SuperApp_V2", branch="main", commit_sha="a6b7c8d9e0f1", workflow_name="CI Test & Build", status="completed", conclusion="success", linked_task_id="TASK-005", simulated=True, created_at=now),
+            WorkflowRun(id="run-102", repo="SuperApp_V2", branch="feat/payment", commit_sha="3f8b1c4e9d0a", workflow_name="Integration E2E", status="completed", conclusion="failure", failed_step="Run Playwright E2E", failure_category="CODE_ERROR", linked_task_id="TASK-004", log_excerpt="AssertionError: Expected payment status APPROVED, received TIMEOUT", simulated=True, created_at=now),
+            WorkflowRun(id="run-103", repo="SuperApp_V2", branch="feat/cart", commit_sha="7e2d9a1c4b8f", workflow_name="Lint & Security", status="completed", conclusion="success", simulated=True, created_at=now)
         ]
         for r in wf_runs:
             db.add(r)
@@ -246,22 +258,144 @@ async def seed_demo_data():
             active_deployments=0,
             healthy_vms=4,
             verified_criteria_percent=85.7,
-            kill_switch_active=False
+            kill_switch_active=False,
+            updated_at=now
         )
         db.add(metrics)
 
-        # 9. Seed Audit Logs
+        # ----------------- SEED MODERNIZATION SCENARIOS ----------------- #
+
+        # 9. Seed Business Analyst (BA) Requirement Discussion
+        ba_disc = BaDiscussion(
+            id="BA-001",
+            project_id="proj-default",
+            feature_name="Customer Loyalty Rewards & Coupon Redemption Tab",
+            user_problem="Customers drop off during checkout because there is no intuitive way to view, scratch, and apply earned discount coupons on mobile.",
+            proposed_flow="Checkout screen ➔ Click 'Apply Coupon' ➔ Quick slide-up modal showing available loyalty rewards ➔ Single-tap apply with instant cart recalculation.",
+            questions_json=json.dumps([
+                {
+                    "id": "Q1",
+                    "topic": "Coupon Expiration Grace Period",
+                    "question": "Should coupons expiring within 24 hours remain redeemable during an active checkout session?",
+                    "recommended_default": "Yes - 30 minute lock during active session",
+                    "rationale": "Prevents cart abandonment when a coupon expires mid-checkout while customer enters card details.",
+                    "user_answer": "Yes - 30 minute lock during active session",
+                    "is_answered": True
+                },
+                {
+                    "id": "Q2",
+                    "topic": "Partial Discount Stacking",
+                    "question": "Are loyalty reward points stackable with seasonal promotional coupon codes?",
+                    "recommended_default": "No - Highest single discount takes precedence",
+                    "rationale": "Protects gross profit margin and avoids negative cart totals.",
+                    "user_answer": "No - Highest single discount takes precedence",
+                    "is_answered": True
+                }
+            ]),
+            acceptance_criteria_json=json.dumps([
+                "Loyalty Rewards tab visible in Navigation bar for authenticated Customers",
+                "Hidden from Anonymous users with redirect to login",
+                "Coupon redemption enforces single-use token in database",
+                "Touch targets for mobile coupon cards >= 48px"
+            ]),
+            status="CONFIRMED",
+            confirmed_by="Aditya Jain",
+            confirmed_at=now,
+            created_at=now
+        )
+        db.add(ba_disc)
+
+        # 10. Seed Thought / R&D Technical Suggestions (Essential vs Optional)
+        rd_suggs = [
+            RdSuggestion(
+                id="RD-001",
+                project_id="proj-default",
+                feature_name="Customer Loyalty Rewards & Coupon Redemption Tab",
+                title="Distributed Redis Redlock for Idempotent Coupon Claims",
+                category="ESSENTIAL",
+                benefit="Prevents race conditions where a fast user redeems the same coupon across 2 browser tabs simultaneously.",
+                risk_tradeoff="Requires Redis dependency, but prevents financial leakage.",
+                complexity="MEDIUM",
+                status="APPROVED",
+                decided_at=now,
+                created_at=now
+            ),
+            RdSuggestion(
+                id="RD-002",
+                project_id="proj-default",
+                feature_name="Customer Loyalty Rewards & Coupon Redemption Tab",
+                title="Micro-Haptic Confetti Celebration on Successful Redemption",
+                category="OPTIONAL",
+                benefit="Delights mobile users and reinforces rewarding checkout experience (Rapido-inspired delight).",
+                risk_tradeoff="Minor JS bundle addition (12kb canvas-confetti).",
+                complexity="LOW",
+                status="APPROVED",
+                decided_at=now,
+                created_at=now
+            )
+        ]
+        for rd in rd_suggs:
+            db.add(rd)
+
+        # 11. Seed UI/UX Design Specification
+        uiux_spec = UiUxDesignSpec(
+            id="UIUX-001",
+            project_id="proj-default",
+            screen_name="Loyalty Rewards & Voucher Drawer",
+            menu_path="/dashboard/rewards",
+            allowed_roles_json=json.dumps(["Customer", "Admin"]),
+            states_matrix_json=json.dumps({
+                "loading": "Skeleton card grid matching 3 voucher slots with subtle shimmer.",
+                "empty": "Illustration of gift box: 'No coupons available right now. Place an order to earn reward points!'",
+                "success": "Voucher applied! Green badge with '-$15.00' reflected instantly on cart subtotal.",
+                "error": "Banner: 'Coupon code INVALID_SAVE20 has already been used. Please try another.'",
+                "forbidden": "403 lock screen: 'Loyalty rewards require an active customer membership account.'"
+            }),
+            design_tokens_json=json.dumps({
+                "primary_action_height": "48px",
+                "border_radius": "12px",
+                "contrast_ratio": "7.2:1 (AAA)",
+                "font_family": "Inter, system-ui, sans-serif"
+            }),
+            status="VERIFIED",
+            created_at=now
+        )
+        db.add(uiux_spec)
+
+        # 12. Seed Legacy Regression Check
+        legacy_check = LegacyRegressionCheck(
+            id="LEG-001",
+            project_id="proj-default",
+            controller_name="CheckoutController.cs",
+            file_path="SuperApp_V2/Controllers/CheckoutController.cs",
+            routes_json=json.dumps([
+                "POST /api/checkout/cart",
+                "POST /api/checkout/apply-coupon",
+                "POST /api/checkout/process-payment",
+                "GET /api/checkout/summary"
+            ]),
+            has_business_logic=True,
+            refactoring_status="EXTRACTED_TO_SERVICE",
+            baseline_test_suite="SuperApp_V2.Tests/Regression/CheckoutRegressionTests.cs (12 Tests)",
+            regression_test_status="PASSING",
+            extracted_service="Services/Checkout/CheckoutService.cs (Controller reduced from 420 LOC to 68 LOC)",
+            created_at=now,
+            updated_at=now
+        )
+        db.add(legacy_check)
+
+        # 13. Audit Logs
         logs = [
             ("PROJECT_INITIALIZED", "CHIEF_ORCHESTRATOR", "SuperApp E-Commerce & Auth Service project workspace discovered."),
-            ("PLAN_CREATED", "CHIEF_ORCHESTRATOR", "Deconstructed user request into 7 DAG tasks."),
-            ("TASK_ASSIGNED", "CHIEF_ORCHESTRATOR", "Assigned TASK-001 to Chief Architect."),
-            ("TASK_VERIFIED", "CHIEF_ORCHESTRATOR", "TASK-001 verified with valid schema artifacts."),
-            ("TASK_ASSIGNED", "CHIEF_ORCHESTRATOR", "Assigned TASK-002 to Senior Engineer 1."),
-            ("TASK_VERIFIED", "CHIEF_ORCHESTRATOR", "TASK-002 verified with 15 passing tests."),
-            ("STAGING_DEPLOYED", "VM_FLEET_HANDLER", "Deployed v1.2.0-rc to vm-stage-01 and verified health."),
+            ("PLAN_CREATED", "CHIEF_ORCHESTRATOR", "Deconstructed user request into DAG tasks."),
+            ("BA_DISCUSSION_STARTED", "PRODUCT_ANALYST", "Initiated requirements discussion for Loyalty Rewards with recommended defaults."),
+            ("BA_REQUIREMENTS_CONFIRMED", "OPERATOR", "Aditya Jain confirmed material requirements for BA-001."),
+            ("RD_SUGGESTION_APPROVED", "THOUGHT_RND_ENGINEER", "Approved Redis Redlock recommendation for atomic redemption."),
+            ("UIUX_SPEC_VERIFIED", "UIUX_DESIGN_ENGINEER", "Validated 5-state matrix and 48px touch targets for rewards screen."),
+            ("LEGACY_REGRESSION_VERIFIED", "CHIEF_ARCHITECT", "Extracted CheckoutController business logic into CheckoutService with 12 passing regression tests."),
             ("APPROVAL_REQUESTED", "SECURITY_RELEASE_GATE", "Human approval requested for Production Release v1.2.0.")
         ]
         for evt, actor, det in logs:
-            db.add(AuditLog(event_type=evt, actor=actor, details=det))
+            db.add(AuditLog(event_type=evt, actor=actor, details=det, timestamp=now))
 
         await db.commit()

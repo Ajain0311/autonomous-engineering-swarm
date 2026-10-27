@@ -10,7 +10,7 @@ interface AgentHierarchyProps {
 export const AgentHierarchy: React.FC<AgentHierarchyProps> = ({ agents, onSelectAgent }) => {
   // Group agents into tiers
   const orchestrator = agents.find(a => a.id === 'agent-orchestrator');
-  const leadership = agents.filter(a => ['agent-pm', 'agent-ba', 'agent-rnd', 'agent-architect'].includes(a.id));
+  const leadership = agents.filter(a => ['agent-pm', 'agent-ba', 'agent-rnd', 'agent-uiux', 'agent-architect'].includes(a.id));
   const seniors = agents.filter(a => ['agent-senior-1', 'agent-senior-2'].includes(a.id));
   const juniors = agents.filter(a => ['agent-junior-1', 'agent-junior-2', 'agent-junior-3', 'agent-dynamic-worker'].includes(a.id));
   const opsAndGates = agents.filter(a => ['agent-devops', 'agent-watcher', 'agent-qa', 'agent-vm-fleet', 'agent-assembly', 'agent-security'].includes(a.id));
@@ -74,8 +74,8 @@ export const AgentHierarchy: React.FC<AgentHierarchyProps> = ({ agents, onSelect
       {/* Hierarchy Header */}
       <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
         <div>
-          <h2 className="text-base font-bold text-slate-900 dark:text-white">17-Role Agent Hierarchy & Organization</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Live multi-agent coordination structure with dynamic worktree workers</p>
+          <h2 className="text-base font-bold text-slate-900 dark:text-white">18-Role Agent Hierarchy & Organization</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Live multi-agent coordination structure with dedicated UI/UX Design Engineer and dynamic worktree workers</p>
         </div>
         <div className="text-xs text-slate-400">Click any agent to inspect logs, tool activity & decisions</div>
       </div>

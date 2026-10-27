@@ -137,3 +137,74 @@ export interface Approval {
   rejection_reason: string | null;
   created_at: string;
 }
+
+// ---------------- Modernization & Feature Extensions ---------------- //
+
+export interface BaQuestion {
+  id: string;
+  topic: string;
+  question: string;
+  recommended_default: string;
+  rationale: string;
+  user_answer: string | null;
+  is_answered: boolean;
+}
+
+export interface BaDiscussion {
+  id: string;
+  project_id: string;
+  feature_name: string;
+  user_problem: string;
+  proposed_flow: string;
+  questions: BaQuestion[];
+  acceptance_criteria: string[];
+  status: 'PENDING_CONFIRMATION' | 'CONFIRMED' | 'REJECTED';
+  confirmed_by: string | null;
+  confirmed_at: string | null;
+  created_at: string | null;
+}
+
+export interface RdSuggestion {
+  id: string;
+  project_id: string;
+  feature_name: string;
+  title: string;
+  category: 'ESSENTIAL' | 'OPTIONAL';
+  benefit: string;
+  risk_tradeoff: string;
+  complexity: 'LOW' | 'MEDIUM' | 'HIGH';
+  status: 'PROPOSED' | 'APPROVED' | 'DISMISSED';
+  decided_at: string | null;
+  created_at: string;
+}
+
+export interface UiUxDesignSpec {
+  id: string;
+  project_id: string;
+  screen_name: string;
+  menu_path: string;
+  allowed_roles: string[];
+  states_matrix: {
+    loading?: string;
+    empty?: string;
+    success?: string;
+    error?: string;
+    forbidden?: string;
+  };
+  status: string;
+  created_at: string | null;
+}
+
+export interface LegacyRegressionCheck {
+  id: string;
+  project_id: string;
+  controller_name: string;
+  file_path: string;
+  routes: string[];
+  has_business_logic: boolean;
+  refactoring_status: 'MAPPED' | 'BASELINE_TESTED' | 'EXTRACTED_TO_SERVICE' | 'VERIFIED';
+  baseline_test_suite: string;
+  regression_test_status: 'PASSING' | 'FAILING' | 'PENDING';
+  extracted_service: string | null;
+  updated_at: string | null;
+}

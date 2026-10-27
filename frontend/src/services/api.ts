@@ -1,4 +1,16 @@
-import { Agent, Task, TaskGraphData, SystemMetrics, WorkflowRun, VmNode, Approval } from '../types';
+import {
+  Agent,
+  Task,
+  TaskGraphData,
+  SystemMetrics,
+  WorkflowRun,
+  VmNode,
+  Approval,
+  BaDiscussion,
+  RdSuggestion,
+  UiUxDesignSpec,
+  LegacyRegressionCheck
+} from '../types';
 
 const API_BASE = '/api';
 
@@ -95,6 +107,62 @@ export const api = {
 
   runDemoFailureLoop: async () => {
     const res = await fetch(`${API_BASE}/system/run-demo-failure-loop`, { method: 'POST' });
+    return res.json();
+  },
+
+  // ---------------- BA & R&D ---------------- //
+  getBaDiscussions: async (): Promise<BaDiscussion[]> => {
+    const res = await fetch(`${API_BASE}/ba/discussions`);
+    return res.json();
+  },
+
+  answerBaQuestion: async (discId: string, questionId: string, answer: string) => {
+    const res = await fetch(`${API_BASE}/ba/discussions/${discId}/answer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question_id: questionId, answer })
+    });
+    return res.json();
+  },
+
+  confirmBaProposal: async (discId: string, actor: string = 'Product Owner') => {
+    const res = await fetch(`${API_BASE}/ba/discussions/${discId}/confirm`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ actor })
+    });
+    return res.json();
+  },
+
+  getRdSuggestions: async (): Promise<RdSuggestion[]> => {
+    const res = await fetch(`${API_BASE}/rd/suggestions`);
+    return res.json();
+  },
+
+  approveRdSuggestion: async (id: string) => {
+    const res = await fetch(`${API_BASE}/rd/suggestions/${id}/approve`, { method: 'POST' });
+    return res.json();
+  },
+
+  dismissRdSuggestion: async (id: string) => {
+    const res = await fetch(`${API_BASE}/rd/suggestions/${id}/dismiss`, { method: 'POST' });
+    return res.json();
+  },
+
+  // ---------------- UI/UX ---------------- //
+  getUiUxSpecs: async (): Promise<UiUxDesignSpec[]> => {
+    const res = await fetch(`${API_BASE}/uiux/specs`);
+    return res.json();
+  },
+
+  // ---------------- Legacy Regression ---------------- //
+  getLegacyChecks: async (): Promise<LegacyRegressionCheck[]> => {
+    const res = await fetch(`${API_BASE}/legacy/checks`);
+    return res.json();
+  },
+
+  verifyLegacyRegression: async (id: string) => {
+    const res = await fetch(`${API_BASE}/legacy/checks/${id}/verify`, { method: 'POST' });
     return res.json();
   }
 };

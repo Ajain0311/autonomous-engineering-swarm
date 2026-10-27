@@ -7,12 +7,27 @@ import { KanbanBoard } from './components/KanbanBoard';
 import { GitHubMonitor } from './components/GitHubMonitor';
 import { VmFleetDashboard } from './components/VmFleetDashboard';
 import { ApprovalCenter } from './components/ApprovalCenter';
+import { BaRdStudio } from './components/BaRdStudio';
+import { UiUxDesignStudio } from './components/UiUxDesignStudio';
+import { LegacyRegressionMonitor } from './components/LegacyRegressionMonitor';
 import { AgentDetailModal } from './components/AgentDetailModal';
 import { TaskDetailModal } from './components/TaskDetailModal';
 
 import { api } from './services/api';
 import { wsClient } from './services/websocket';
-import { Agent, Task, TaskGraphData, SystemMetrics, WorkflowRun, VmNode, Approval } from './types';
+import {
+  Agent,
+  Task,
+  TaskGraphData,
+  SystemMetrics,
+  WorkflowRun,
+  VmNode,
+  Approval,
+  BaDiscussion,
+  RdSuggestion,
+  UiUxDesignSpec,
+  LegacyRegressionCheck
+} from './types';
 
 export const App: React.FC = () => {
   const [darkMode, setDarkMode] = useState<boolean>(true);
@@ -27,6 +42,12 @@ export const App: React.FC = () => {
   const [vmNodes, setVmNodes] = useState<VmNode[]>([]);
   const [approvals, setApprovals] = useState<Approval[]>([]);
 
+  // Modernization & Extended Features State
+  const [baDiscussions, setBaDiscussions] = useState<BaDiscussion[]>([]);
+  const [rdSuggestions, setRdSuggestions] = useState<RdSuggestion[]>([]);
+  const [uiuxSpecs, setUiUxSpecs] = useState<UiUxDesignSpec[]>([]);
+  const [legacyChecks, setLegacyChecks] = useState<LegacyRegressionCheck[]>([]);
+
   // Selection Modals
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -35,7 +56,19 @@ export const App: React.FC = () => {
   // Initial Data Fetch
   const loadAllData = async () => {
     try {
-      const [agentsData, graphData, kanban, mData, runs, vms, apprs] = await Promise.all([
+      const [
+        agentsData,
+        graphData,
+        kanban,
+        mData,
+        runs,
+        vms,
+        apprs,
+        baData,
+        rdData,
+        uiuxData,
+        legData
+      ] = await Promise.all([
         api.getAgents(),
         api.getTaskGraph(),
         api.getKanban(),
@@ -43,6 +76,10 @@ export const App: React.FC = () => {
         api.getWorkflowRuns(),
         api.getVmNodes(),
         api.getApprovals(),
+        api.getBaDiscussions(),
+        api.getRdSuggestions(),
+        api.getUiUxSpecs(),
+        api.getLegacyChecks(),
       ]);
       setAgents(agentsData);
       setTaskGraph(graphData);
@@ -51,6 +88,10 @@ export const App: React.FC = () => {
       setWorkflowRuns(runs);
       setVmNodes(vms);
       setApprovals(apprs);
+      setBaDiscussions(baData);
+      setRdSuggestions(rdData);
+      setUiUxSpecs(uiuxData);
+      setLegacyChecks(legData);
     } catch (e) {
       console.error('Failed to load swarm data', e);
     }
@@ -61,8 +102,7 @@ export const App: React.FC = () => {
 
     // WebSocket real-time subscription
     wsClient.connect();
-    const unsubscribe = wsClient.subscribe((event) => {
-      // Refresh on state transitions or task updates
+    const unsubscribe = wsClient.subscribe(() => {
       loadAllData();
     });
 
@@ -124,6 +164,31 @@ export const App: React.FC = () => {
     await loadAllData();
   };
 
+  const handleAnswerBaQuestion = async (discId: string, qId: string, answer: string) => {
+    await api.answerBaQuestion(discId, qId, answer);
+    await loadAllData();
+  };
+
+  const handleConfirmBa = async (discId: string) => {
+    await api.confirmBaProposal(discId);
+    await loadAllData();
+  };
+
+  const handleApproveRd = async (id: string) => {
+    await api.approveRdSuggestion(id);
+    await loadAllData();
+  };
+
+  const handleDismissRd = async (id: string) => {
+    await api.dismissRdSuggestion(id);
+    await loadAllData();
+  };
+
+  const handleVerifyLegacyCheck = async (id: string) => {
+    await api.verifyLegacyRegression(id);
+    await loadAllData();
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors">
       <Navbar
@@ -137,12 +202,34 @@ export const App: React.FC = () => {
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* Live Execution Monitor (Active workers out of 8, queue, verified %) */}
+        {/* Live Execution Monitor */}
         <ExecutionMonitor metrics={metrics} onSubmitPrompt={handleDispatchPrompt} />
 
         {/* Tab Views */}
         {activeTab === 'hierarchy' && (
           <AgentHierarchy agents={agents} onSelectAgent={(agent) => setSelectedAgent(agent)} />
+        )}
+
+        {activeTab === 'ba_rd' && (
+          <BaRdStudio
+            discussions={baDiscussions}
+            suggestions={rdSuggestions}
+            onAnswerQuestion={handleAnswerBaQuestion}
+            onConfirmBa={handleConfirmBa}
+            onApproveRd={handleApproveRd}
+            onDismissRd={handleDismissRd}
+          />
+        )}
+
+        {activeTab === 'uiux' && (
+          <UiUxDesignStudio specs={uiuxSpecs} />
+        )}
+
+        {activeTab === 'legacy' && (
+          <LegacyRegressionMonitor
+            checks={legacyChecks}
+            onVerifyCheck={handleVerifyLegacyCheck}
+          />
         )}
 
         {activeTab === 'assignments' && (
@@ -184,7 +271,7 @@ export const App: React.FC = () => {
       <TaskDetailModal
         task={selectedTask}
         onClose={() => setSelectedTaskId(null)}
-        onRetry={async (id) => {
+        onRetry={async () => {
           await api.getTasks();
           setSelectedTaskId(null);
           loadAllData();
@@ -193,4 +280,5 @@ export const App: React.FC = () => {
     </div>
   );
 };
+
 export default App;

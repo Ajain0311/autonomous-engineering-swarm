@@ -415,7 +415,9 @@ class OrchestratorEngine:
 
     def _resolve_worker_role(self, task: Task) -> str:
         title = task.title.lower()
-        if "frontend" in title or "ui" in title:
+        if "design" in title or "ui/ux" in title or "screen" in title or "ux" in title:
+            return "UI/UX Design Engineer (Speed & Usability)"
+        elif "frontend" in title or "ui" in title:
             return "Senior Engineer 2"
         elif "qa" in title or "test" in title:
             return "QA / Human Simulation Engineer"
@@ -423,7 +425,7 @@ class OrchestratorEngine:
             return "VM Fleet / Infrastructure Handler"
         elif "release" in title or "security" in title:
             return "Security / Release Gate"
-        elif "schema" in title or "architecture" in title:
+        elif "schema" in title or "architecture" in title or "legacy" in title or "refactor" in title:
             return "Chief Architect"
         else:
             return "Senior Engineer 1"

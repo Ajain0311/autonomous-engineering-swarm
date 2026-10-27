@@ -21,7 +21,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveTab
 }) => {
   const navTabs = [
-    { id: 'hierarchy', label: 'Agent Hierarchy' },
+    { id: 'hierarchy', label: 'Agent Hierarchy (18 Roles)' },
+    { id: 'ba_rd', label: 'BA & R&D Studio' },
+    { id: 'uiux', label: 'UI/UX Design & States' },
+    { id: 'legacy', label: 'Legacy Modernization' },
     { id: 'assignments', label: 'Task Assignments (Who -> Whom)' },
     { id: 'kanban', label: 'Kanban Board' },
     { id: 'github', label: 'GitHub & CI/CD' },
