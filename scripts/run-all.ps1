@@ -18,8 +18,8 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-Write-Host "`n3. Launching Swarm Orchestrator & Dashboard at http://localhost:8000..." -ForegroundColor Green
+Write-Host "`n3. Launching Swarm Orchestrator & Dashboard at http://localhost:8080..." -ForegroundColor Green
 Write-Host "   (Serving unified React frontend and FastAPI backend)" -ForegroundColor Cyan
 Write-Host "   Press Ctrl+C to stop.`n"
 
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8080

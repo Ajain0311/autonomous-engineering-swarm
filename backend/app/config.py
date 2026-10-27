@@ -13,7 +13,9 @@ class Settings(BaseModel):
     # Database
     DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite+aiosqlite:///{BASE_DIR}/swarm.db")
     
-    # Concurrency and Reliability
+    # Application Ports
+    HOST: str = os.getenv("HOST", "0.0.0.0")
+    PORT: int = int(os.getenv("PORT", "8080"))
     MAX_CONCURRENT_CODING_WORKERS: int = int(os.getenv("MAX_CONCURRENT_CODING_WORKERS", "8"))
     MAX_DEFECT_RETRIES: int = int(os.getenv("MAX_DEFECT_RETRIES", "3"))
     DEFAULT_TASK_LEASE_SECONDS: int = int(os.getenv("DEFAULT_TASK_LEASE_SECONDS", "600"))
