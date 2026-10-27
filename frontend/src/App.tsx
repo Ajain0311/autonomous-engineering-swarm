@@ -12,6 +12,7 @@ import { UiUxDesignStudio } from './components/UiUxDesignStudio';
 import { LegacyRegressionMonitor } from './components/LegacyRegressionMonitor';
 import { AgentDetailModal } from './components/AgentDetailModal';
 import { TaskDetailModal } from './components/TaskDetailModal';
+import { Office3DView } from './components/office/Office3DView';
 
 import { api } from './services/api';
 import { wsClient } from './services/websocket';
@@ -31,7 +32,8 @@ import {
 
 export const App: React.FC = () => {
   const [darkMode, setDarkMode] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<string>('hierarchy');
+  const [activeTab, setActiveTab] = useState<string>('office3d');
+  const [tasks, setTasks] = useState<Task[]>([]);
 
   // Core Data State
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -82,6 +84,7 @@ export const App: React.FC = () => {
         api.getLegacyChecks(),
       ]);
       setAgents(agentsData);
+      api.getTasks().then(setTasks);
       setTaskGraph(graphData);
       setKanbanData(kanban);
       setMetrics(mData);
@@ -206,6 +209,10 @@ export const App: React.FC = () => {
         <ExecutionMonitor metrics={metrics} onSubmitPrompt={handleDispatchPrompt} />
 
         {/* Tab Views */}
+        {activeTab === 'office3d' && (
+          <Office3DView tasks={tasks} onSelectTaskId={(taskId) => setSelectedTaskId(taskId)} />
+        )}
+
         {activeTab === 'hierarchy' && (
           <AgentHierarchy agents={agents} onSelectAgent={(agent) => setSelectedAgent(agent)} />
         )}

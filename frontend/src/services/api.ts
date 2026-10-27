@@ -15,6 +15,31 @@ import {
 const API_BASE = '/api';
 
 export const api = {
+  createAgent: async (payload: { name: string; role: string; parent_id?: string | null; department?: string; model?: string }): Promise<Agent> => {
+    const res = await fetch(`${API_BASE}/agents`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return res.json();
+  },
+
+  updateAgent: async (agentId: string, payload: { name?: string; role?: string; parent_id?: string | null; department?: string; status?: string; model?: string }): Promise<Agent> => {
+    const res = await fetch(`${API_BASE}/agents/${agentId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return res.json();
+  },
+
+  deleteAgent: async (agentId: string) => {
+    const res = await fetch(`${API_BASE}/agents/${agentId}`, {
+      method: 'DELETE'
+    });
+    return res.json();
+  },
+
   getProjects: async () => {
     const res = await fetch(`${API_BASE}/projects`);
     return res.json();

@@ -21,36 +21,62 @@ from app.core.db import (
 )
 
 AGENTS_CONFIG = [
-    {"id": "agent-orchestrator", "name": "Chief Orchestrator", "role": "Chief Orchestrator / Team Leader", "parent_id": None},
-    {"id": "agent-pm", "name": "Alex Mercer", "role": "Project Manager", "parent_id": "agent-orchestrator"},
-    {"id": "agent-ba", "name": "Elena Rostova", "role": "Product Analyst / Business Analyst", "parent_id": "agent-orchestrator"},
-    {"id": "agent-rnd", "name": "Dr. Aris Vance", "role": "Thought / R&D Engineer", "parent_id": "agent-orchestrator"},
-    {"id": "agent-uiux", "name": "Aria Vance", "role": "UI/UX Design Engineer (Speed & Usability)", "parent_id": "agent-orchestrator"},
-    {"id": "agent-architect", "name": "Marcus Kane", "role": "Chief Architect", "parent_id": "agent-orchestrator"},
-    {"id": "agent-senior-1", "name": "Sarah Chen", "role": "Senior Engineer 1 (Backend & Core)", "parent_id": "agent-orchestrator"},
-    {"id": "agent-senior-2", "name": "David Kim", "role": "Senior Engineer 2 (Frontend & Integration)", "parent_id": "agent-orchestrator"},
-    {"id": "agent-junior-1", "name": "Lucas Diaz", "role": "Junior Engineer 1 (Feature & Bugfix)", "parent_id": "agent-senior-1"},
-    {"id": "agent-junior-2", "name": "Priya Patel", "role": "Junior Engineer 2 (UI & API Integration)", "parent_id": "agent-senior-2"},
-    {"id": "agent-junior-3", "name": "Oliver Scott", "role": "Junior Engineer 3 (Parallel Feature & Regression)", "parent_id": "agent-senior-1"},
-    {"id": "agent-dynamic-worker", "name": "Worker Pool (1-8)", "role": "Dynamic Coding Workers", "parent_id": "agent-orchestrator"},
-    {"id": "agent-devops", "name": "Devin Torres", "role": "Automation / DevOps Engineer", "parent_id": "agent-orchestrator"},
-    {"id": "agent-watcher", "name": "Actions Sentinel", "role": "GitHub Actions Watcher", "parent_id": "agent-devops"},
-    {"id": "agent-qa", "name": "Tanya Volkova", "role": "QA / Human Simulation Engineer", "parent_id": "agent-orchestrator"},
-    {"id": "agent-vm-fleet", "name": "Atlas Fleet Handler", "role": "VM Fleet / Infrastructure Handler", "parent_id": "agent-devops"},
-    {"id": "agent-assembly", "name": "Gordon Vance", "role": "Review & Assembly Engineer", "parent_id": "agent-orchestrator"},
-    {"id": "agent-security", "name": "Aegis Gatekeeper", "role": "Security / Release Gate", "parent_id": "agent-orchestrator"},
+    {"id": "agent-aditya", "name": "Aditya Jain", "role": "Chief Orchestrator / Top Authority", "parent_id": None},
+    {"id": "agent-sanjay", "name": "Sanjay Sahlot", "role": "Operations Coordinator / Deputy Lead", "parent_id": "agent-aditya"},
+    {"id": "agent-giriraj", "name": "Giriraj Mali", "role": "Senior Developer / Engineering Lead", "parent_id": "agent-aditya"},
+    {"id": "agent-bhupendra", "name": "Bhupendra Jingar", "role": "Business Analyst / Product Analyst", "parent_id": "agent-aditya"},
+    {"id": "agent-abhishek", "name": "Abhishek Hingar", "role": "QA Lead", "parent_id": "agent-giriraj"},
+    {"id": "agent-ashish", "name": "Ashish Das", "role": "Tester, reporting to QA", "parent_id": "agent-abhishek"},
+    {"id": "agent-rohan", "name": "Rohan Sharma", "role": "Developer", "parent_id": "agent-giriraj"},
+    {"id": "agent-shaurya", "name": "Shaurya Jain", "role": "Developer", "parent_id": "agent-giriraj"},
+    {"id": "agent-binod", "name": "Binod Kumar", "role": "Developer", "parent_id": "agent-giriraj"},
+    {"id": "agent-mohit", "name": "Mohit Sharma", "role": "Developer", "parent_id": "agent-giriraj"},
+    {"id": "agent-harshit-p", "name": "Harshit Purohit", "role": "DevOps Engineer", "parent_id": "agent-sanjay"},
+    {"id": "agent-divisha", "name": "Divisha Joshi", "role": "Documentation Engineer", "parent_id": "agent-giriraj"},
+    {"id": "agent-hemang", "name": "Hemang Tiwari", "role": "Code Review Engineer", "parent_id": "agent-giriraj"},
+    {"id": "agent-esha", "name": "Esha Saini", "role": "UI/UX Designer / UI/UX Design Engineer", "parent_id": "agent-giriraj"},
+    {"id": "agent-kratik", "name": "Kratik Jain", "role": "Backend Engineer", "parent_id": "agent-giriraj"},
+    {"id": "agent-maan", "name": "Maan Singh", "role": "Frontend Engineer", "parent_id": "agent-giriraj"},
+    {"id": "agent-harshit-m", "name": "Harshit Masta", "role": "Security Engineer", "parent_id": "agent-aditya"},
+    {"id": "agent-kathan", "name": "Kathan Jain", "role": "Automation / CI Engineer", "parent_id": "agent-harshit-p"},
 ]
 
-async def seed_demo_data():
+async def seed_demo_data(force_refresh_agents: bool = False):
     async with AsyncSessionLocal() as db:
-        # Check if already seeded
         res = await db.execute(select(Agent))
-        if res.scalars().first():
-            return
+        existing_agents = res.scalars().all()
+        has_aditya = any(a.name == "Aditya Jain" for a in existing_agents)
 
         now = datetime.now(timezone.utc)
 
-        # 1. Projects
+        # 1. Ensure 18 Official Employees
+        if not existing_agents or not has_aditya or force_refresh_agents:
+            if existing_agents:
+                for a in existing_agents:
+                    await db.delete(a)
+                await db.commit()
+
+            for a in AGENTS_CONFIG:
+                agent = Agent(
+                    id=a["id"],
+                    name=a["name"],
+                    role=a["role"],
+                    status="IDLE",
+                    parent_id=a["parent_id"],
+                    model="Gemini 1.5 Pro" if "Chief" in a["role"] or "Senior" in a["role"] or "Lead" in a["role"] or "Review" in a["role"] or "Security" in a["role"] or "Business" in a["role"] else "Gemini 1.5 Flash",
+                    tasks_completed=4,
+                    tasks_failed=0,
+                    last_activity=now
+                )
+                db.add(agent)
+            await db.commit()
+
+        # Check if other models already seeded
+        proj_res = await db.execute(select(Project))
+        if proj_res.scalars().first():
+            return
+
+        # 2. Projects
         proj = Project(
             id="proj-default",
             name="SuperApp E-Commerce & Auth Service",
@@ -61,21 +87,6 @@ async def seed_demo_data():
             created_at=now
         )
         db.add(proj)
-
-        # 2. Seed 18 Agents (including UI/UX Design Engineer)
-        for a in AGENTS_CONFIG:
-            agent = Agent(
-                id=a["id"],
-                name=a["name"],
-                role=a["role"],
-                status="IDLE",
-                parent_id=a["parent_id"],
-                model="Gemini 1.5 Pro" if "Senior" in a["role"] or "Architect" in a["role"] or "Orchestrator" in a["role"] or "UI/UX" in a["role"] else "Gemini 1.5 Flash",
-                tasks_completed=4,
-                tasks_failed=0,
-                last_activity=now
-            )
-            db.add(agent)
 
         # 3. Seed Tasks & DAG
         tasks_data = [

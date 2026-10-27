@@ -21,6 +21,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveTab
 }) => {
   const navTabs = [
+    { id: 'office3d', label: 'Living 3D AI Office 🏢' },
     { id: 'hierarchy', label: 'Agent Hierarchy (18 Roles)' },
     { id: 'ba_rd', label: 'BA & R&D Studio' },
     { id: 'uiux', label: 'UI/UX Design & States' },
@@ -44,7 +45,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div>
               <div className="flex items-center space-x-2">
                 <span className="font-bold text-lg text-slate-900 dark:text-white tracking-tight">Swarm Orchestrator</span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 font-semibold border border-emerald-500/20">17 Agents Live</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 font-semibold border border-emerald-500/20">18 AI Employees Live</span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">Autonomous Engineering Swarm</p>
             </div>

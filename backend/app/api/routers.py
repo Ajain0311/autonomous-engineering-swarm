@@ -42,6 +42,22 @@ class ApprovalDecisionPayload(BaseModel):
 class KillSwitchPayload(BaseModel):
     active: bool
 
+class CreateAgentPayload(BaseModel):
+    id: Optional[str] = None
+    name: str
+    role: str
+    parent_id: Optional[str] = "agent-giriraj"
+    model: Optional[str] = "Gemini 1.5 Flash"
+    department: Optional[str] = "Core Engineering"
+
+class UpdateAgentPayload(BaseModel):
+    name: Optional[str] = None
+    role: Optional[str] = None
+    parent_id: Optional[str] = None
+    status: Optional[str] = None
+    model: Optional[str] = None
+    department: Optional[str] = None
+
 # 1. Projects
 @router.get("/projects")
 async def list_projects(db: AsyncSession = Depends(get_db)):
@@ -70,6 +86,107 @@ async def list_agents(db: AsyncSession = Depends(get_db)):
         }
         for a in agents
     ]
+
+@router.post("/agents")
+async def create_agent(payload: CreateAgentPayload, db: AsyncSession = Depends(get_db)):
+    import re
+    agent_id = payload.id
+    if not agent_id:
+        slug = re.sub(r'[^a-z0-9]+', '-', payload.name.lower()).strip('-')
+        agent_id = f"agent-{slug}"
+
+    existing = await db.get(Agent, agent_id)
+    if existing:
+        agent_id = f"{agent_id}-{int(datetime.utcnow().timestamp())}"
+
+    new_agent = Agent(
+        id=agent_id,
+        name=payload.name,
+        role=payload.role,
+        parent_id=payload.parent_id,
+        model=payload.model or "Gemini 1.5 Flash",
+        status="IDLE",
+        tasks_completed=0,
+        tasks_failed=0,
+        last_activity=datetime.utcnow()
+    )
+    db.add(new_agent)
+    await db.commit()
+
+    agent_data = {
+        "id": new_agent.id,
+        "name": new_agent.name,
+        "role": new_agent.role,
+        "status": new_agent.status,
+        "current_task_id": new_agent.current_task_id,
+        "parent_id": new_agent.parent_id,
+        "model": new_agent.model,
+        "tasks_completed": new_agent.tasks_completed,
+        "tasks_failed": new_agent.tasks_failed,
+        "department": payload.department or "Core Engineering"
+    }
+
+    await event_bus.publish("AGENT_CREATED", agent_data)
+    await event_bus.publish("AGENTS_UPDATED", {"action": "CREATE", "agent": agent_data})
+    return agent_data
+
+@router.put("/agents/{agent_id}")
+async def update_agent(agent_id: str, payload: UpdateAgentPayload, db: AsyncSession = Depends(get_db)):
+    agent = await db.get(Agent, agent_id)
+    if not agent:
+        raise HTTPException(status_code=404, detail=f"Agent {agent_id} not found")
+
+    if payload.name is not None:
+        agent.name = payload.name
+    if payload.role is not None:
+        agent.role = payload.role
+    if payload.parent_id is not None:
+        agent.parent_id = payload.parent_id
+    if payload.status is not None:
+        agent.status = payload.status
+    if payload.model is not None:
+        agent.model = payload.model
+    agent.last_activity = datetime.utcnow()
+
+    await db.commit()
+
+    agent_data = {
+        "id": agent.id,
+        "name": agent.name,
+        "role": agent.role,
+        "status": agent.status,
+        "current_task_id": agent.current_task_id,
+        "parent_id": agent.parent_id,
+        "model": agent.model,
+        "tasks_completed": agent.tasks_completed,
+        "tasks_failed": agent.tasks_failed,
+        "department": payload.department
+    }
+
+    await event_bus.publish("AGENT_MODIFIED", agent_data)
+    await event_bus.publish("AGENTS_UPDATED", {"action": "UPDATE", "agent": agent_data})
+    return agent_data
+
+@router.delete("/agents/{agent_id}")
+async def delete_agent(agent_id: str, db: AsyncSession = Depends(get_db)):
+    if agent_id == "agent-aditya":
+        raise HTTPException(status_code=400, detail="Cannot delete Chief Orchestrator (Aditya Jain)")
+
+    agent = await db.get(Agent, agent_id)
+    if not agent:
+        raise HTTPException(status_code=404, detail=f"Agent {agent_id} not found")
+
+    fallback_parent = agent.parent_id or "agent-aditya"
+    await db.execute(
+        update(Agent).where(Agent.parent_id == agent_id).values(parent_id=fallback_parent)
+    )
+
+    await db.delete(agent)
+    await db.commit()
+
+    await event_bus.publish("AGENT_DELETED", {"id": agent_id, "name": agent.name})
+    await event_bus.publish("AGENTS_UPDATED", {"action": "DELETE", "agent_id": agent_id})
+    return {"status": "DELETED", "id": agent_id, "name": agent.name}
 
 # 3. Tasks & Details
 @router.get("/tasks")
@@ -661,3 +778,71 @@ async def verify_legacy_regression(check_id: str, db: AsyncSession = Depends(get
 async def list_audit_logs(limit: int = 50, db: AsyncSession = Depends(get_db)):
     res = await db.execute(select(AuditLog).order_by(AuditLog.timestamp.desc()).limit(limit))
     return res.scalars().all()
+
+# 11. Living 3D AI Office Endpoints
+@router.post("/office/lifecycle-scenario")
+async def trigger_office_lifecycle_scenario(step_delay: float = 2.2):
+    """
+    Triggers the complete 12-step Living 3D Office Task Lifecycle:
+    Aditya -> Giriraj -> Bhupendra -> Rohan (walking to desk & typing) ->
+    Rohan walking to Giriraj's cabin -> Presenting -> Giriraj forwards to Abhishek ->
+    Ashish testing in QA lab -> Defect reported back to Rohan -> Rohan fixes ->
+    Harshit Purohit CI/CD deploy -> Divisha docs -> Verified completion reported to Aditya.
+    """
+    import asyncio
+    asyncio.create_task(orchestrator.run_office_lifecycle_scenario(step_delay=step_delay))
+    return {
+        "status": "INITIATED",
+        "scenario": "Living 3D Office 12-Step Task Lifecycle",
+        "task_id": "TASK-LIFECYCLE-100",
+        "step_delay": step_delay
+    }
+
+@router.get("/office/hierarchy")
+async def get_office_hierarchy(db: AsyncSession = Depends(get_db)):
+    """
+    Returns the complete hierarchy of the 18 employees with reporting trees,
+    cabin/desk assignments, and 3D office positions.
+    """
+    res = await db.execute(select(Agent))
+    agents = res.scalars().all()
+    OFFICE_METADATA = {
+        "agent-aditya": {"zone": "Executive Cabin", "desk_id": "cabin-aditya", "coords": [-14, 0, -10], "tier": 1},
+        "agent-sanjay": {"zone": "Operations Command", "desk_id": "desk-sanjay", "coords": [-7, 0, -10], "tier": 2},
+        "agent-giriraj": {"zone": "Senior Engineering Cabin", "desk_id": "cabin-giriraj", "coords": [13, 0, -10], "tier": 2},
+        "agent-bhupendra": {"zone": "BA Strategy Room", "desk_id": "desk-bhupendra", "coords": [-14, 0, 0], "tier": 2},
+        "agent-abhishek": {"zone": "QA Testing Lab", "desk_id": "desk-abhishek", "coords": [11, 0, 0], "tier": 3},
+        "agent-ashish": {"zone": "QA Testing Lab", "desk_id": "desk-ashish", "coords": [14, 0, 0], "tier": 4},
+        "agent-rohan": {"zone": "Developer Pod 1", "desk_id": "desk-rohan", "coords": [-4, 0, -2], "tier": 4},
+        "agent-shaurya": {"zone": "Developer Pod 1", "desk_id": "desk-shaurya", "coords": [-4, 0, 2], "tier": 4},
+        "agent-binod": {"zone": "Developer Pod 1", "desk_id": "desk-binod", "coords": [-4, 0, 6], "tier": 4},
+        "agent-mohit": {"zone": "Developer Pod 2", "desk_id": "desk-mohit", "coords": [4, 0, -2], "tier": 4},
+        "agent-harshit-p": {"zone": "DevOps & Cloud Hub", "desk_id": "desk-harshit-p", "coords": [11, 0, 10], "tier": 3},
+        "agent-divisha": {"zone": "Documentation Desk", "desk_id": "desk-divisha", "coords": [0, 0, 6], "tier": 4},
+        "agent-hemang": {"zone": "Code Review Desk", "desk_id": "desk-hemang", "coords": [0, 0, -2], "tier": 3},
+        "agent-esha": {"zone": "UI/UX Design Studio", "desk_id": "desk-esha", "coords": [-14, 0, 10], "tier": 3},
+        "agent-kratik": {"zone": "Backend Desk", "desk_id": "desk-kratik", "coords": [4, 0, 2], "tier": 4},
+        "agent-maan": {"zone": "Frontend Desk", "desk_id": "desk-maan", "coords": [4, 0, 6], "tier": 4},
+        "agent-harshit-m": {"zone": "Security & Gatekeeping", "desk_id": "desk-harshit-m", "coords": [-7, 0, -6], "tier": 3},
+        "agent-kathan": {"zone": "Automation & CI Desk", "desk_id": "desk-kathan", "coords": [14, 0, 10], "tier": 4},
+    }
+    output = []
+    for a in agents:
+        meta = OFFICE_METADATA.get(a.id, {"zone": "General Floor", "desk_id": f"desk-{a.id}", "coords": [0, 0, 0], "tier": 4})
+        output.append({
+            "id": a.id,
+            "name": a.name,
+            "role": a.role,
+            "status": a.status,
+            "current_task_id": a.current_task_id,
+            "parent_id": a.parent_id,
+            "model": a.model,
+            "tasks_completed": a.tasks_completed,
+            "tasks_failed": a.tasks_failed,
+            "last_activity": a.last_activity.isoformat() if a.last_activity else None,
+            "zone": meta["zone"],
+            "desk_id": meta["desk_id"],
+            "coords": meta["coords"],
+            "tier": meta["tier"]
+        })
+    return output
