@@ -1,0 +1,27 @@
+{
+  "task_id": "TASK-001",
+  "project_id": "proj-default",
+  "assigned_role": "Senior Engineer 1",
+  "title": "Implement User Authentication Endpoint",
+  "goal": "Build robust JWT authentication endpoint with bcrypt password hashing.",
+  "acceptance_criteria": [
+    "POST /api/auth/login returns 200 with JWT token on valid credentials",
+    "POST /api/auth/login returns 401 on invalid password",
+    "Passwords stored in database must be salted bcrypt hashes",
+    "Rate limiting active after 5 failed attempts"
+  ],
+  "repository_url": "https://github.com/org/repo.git",
+  "base_commit": "a1b2c3d4e5f67890123456789abcdef012345678",
+  "target_branch": "feat/task-001-auth",
+  "allowed_file_patterns": [
+    "backend/src/auth/**",
+    "backend/tests/test_auth.py"
+  ],
+  "dependencies": [],
+  "test_command": "pytest backend/tests/test_auth.py -v",
+  "budget": {
+    "max_duration_seconds": 600,
+    "max_retries": 3,
+    "token_limit": 50000
+  }
+}

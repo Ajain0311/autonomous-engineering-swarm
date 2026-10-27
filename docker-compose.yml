@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: swarm_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: swarm
+      POSTGRES_USER: swarm_user
+      POSTGRES_PASSWORD: swarm_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U swarm_user -d swarm"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: swarm_backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://swarm_user:swarm_password@db:5432/swarm
+      - MAX_CONCURRENT_CODING_WORKERS=8
+      - SIMULATION_MODE=True
+      - GITHUB_WEBHOOK_SECRET=swarm_secret_placeholder
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: swarm_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

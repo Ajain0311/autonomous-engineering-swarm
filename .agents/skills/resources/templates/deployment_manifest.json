@@ -1,0 +1,34 @@
+{
+  "release_version": "v1.2.0",
+  "commit_sha": "a1b2c3d4e5f67890123456789abcdef012345678",
+  "target_environment": "staging",
+  "artifacts": [
+    {
+      "name": "backend-api",
+      "image": "registry.internal/api:v1.2.0",
+      "digest": "sha256:7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069"
+    },
+    {
+      "name": "frontend-web",
+      "image": "registry.internal/web:v1.2.0",
+      "digest": "sha256:3f49f7cf479c5950d4f1345d3c8cfa53b497b7134887372b6b553c7c7c346892"
+    }
+  ],
+  "target_nodes": [
+    {
+      "alias": "vm-stage-01",
+      "role": "api",
+      "health_check_url": "http://vm-stage-01:8000/health"
+    }
+  ],
+  "pre_deployment_checks": [
+    "verify_ssh_connectivity",
+    "check_disk_space > 20GB",
+    "verify_memory_free > 4GB"
+  ],
+  "post_deployment_smoke_tests": [
+    "curl -f http://vm-stage-01:8000/health",
+    "curl -f http://vm-stage-01:8000/api/version"
+  ],
+  "rollback_version": "v1.1.9"
+}
