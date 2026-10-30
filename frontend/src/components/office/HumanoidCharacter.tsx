@@ -91,10 +91,10 @@ export const HumanoidCharacter: React.FC<HumanoidCharacterProps> = ({
 
     // SPECIAL ANIMATION: When Owner Baburao is nearby, Bhupendra leaves chair and lies down flat on the desk/table sleeping like true bakchod!
     if (isBhupendra && isOwnerNearby) {
-      // If facing 0 (seated south), table is at z + 0.6. If facing PI (north), table is at z - 0.6.
-      const tableZOffset = employee.rotation_y === 0 ? 0.6 : -0.6;
-      groupRef.current.position.set(currentPos.current.x, 0.78, currentPos.current.z + tableZOffset);
-      groupRef.current.rotation.set(-Math.PI / 2, 0, Math.PI / 2);
+      // Table center is at z = 0 in BA cabin, surface y = 0.78.
+      // Opposite direction orientation (-Math.PI / 2 on Z axis so head points to the other side)
+      groupRef.current.position.set(currentPos.current.x, 0.78, 0.0);
+      groupRef.current.rotation.set(-Math.PI / 2, 0, -Math.PI / 2);
 
       // Relaxed straight legs while sleeping on desk
       if (leftLegRef.current) {
