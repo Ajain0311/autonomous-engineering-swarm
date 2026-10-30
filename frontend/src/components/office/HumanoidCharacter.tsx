@@ -11,6 +11,7 @@ interface HumanoidCharacterProps {
   isSelected: boolean;
   onSelect: (emp: OfficeEmployeeData) => void;
   speedMultiplier: number;
+  isOwnerNearby?: boolean;
 }
 
 export const HumanoidCharacter: React.FC<HumanoidCharacterProps> = ({
@@ -18,7 +19,8 @@ export const HumanoidCharacter: React.FC<HumanoidCharacterProps> = ({
   speech,
   isSelected,
   onSelect,
-  speedMultiplier
+  speedMultiplier,
+  isOwnerNearby = false
 }) => {
   const groupRef = useRef<THREE.Group>(null);
   const leftLegRef = useRef<THREE.Group>(null);
@@ -85,6 +87,35 @@ export const HumanoidCharacter: React.FC<HumanoidCharacterProps> = ({
     groupRef.current.position.copy(currentPos.current);
 
     // Action-specific kinematics
+    const isBhupendra = employee.id === 'agent-bhupendra' || employee.name.includes('Bhupendra');
+
+    // SPECIAL ANIMATION: When Owner Baburao is nearby, Bhupendra leaves chair and lies down flat on the desk/table sleeping like true bakchod!
+    if (isBhupendra && isOwnerNearby) {
+      // If facing 0 (seated south), table is at z + 0.6. If facing PI (north), table is at z - 0.6.
+      const tableZOffset = employee.rotation_y === 0 ? 0.6 : -0.6;
+      groupRef.current.position.set(currentPos.current.x, 0.78, currentPos.current.z + tableZOffset);
+      groupRef.current.rotation.set(-Math.PI / 2, 0, Math.PI / 2);
+
+      // Relaxed straight legs while sleeping on desk
+      if (leftLegRef.current) {
+        leftLegRef.current.rotation.set(0, 0, 0.05);
+      }
+      if (rightLegRef.current) {
+        rightLegRef.current.rotation.set(0, 0, -0.05);
+      }
+      // Sleeping arms folded under head or rested on chest
+      if (leftArmRef.current) {
+        leftArmRef.current.rotation.set(-1.2, 0, 0.4);
+      }
+      if (rightArmRef.current) {
+        rightArmRef.current.rotation.set(-1.2, 0, -0.4);
+      }
+      if (headRef.current) {
+        headRef.current.rotation.set(0, 0, 0.3); // Tilted sleeping head
+      }
+      return;
+    }
+
     if (action === 'SIT' || action === 'CODE') {
       // Sitting posture
       groupRef.current.position.y = currentPos.current.y - 0.22;

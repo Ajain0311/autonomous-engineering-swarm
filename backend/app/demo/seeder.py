@@ -38,7 +38,7 @@ AGENTS_CONFIG = [
     {"id": "agent-kratik", "name": "Kratik Jain", "role": "Backend Engineer", "parent_id": "agent-giriraj"},
     {"id": "agent-maan", "name": "Maan Singh", "role": "Frontend Engineer", "parent_id": "agent-giriraj"},
     {"id": "agent-harshit-m", "name": "Harshit Masta", "role": "Security Engineer", "parent_id": "agent-aditya"},
-    {"id": "agent-kathan", "name": "Kathan Jain", "role": "Automation / CI Engineer", "parent_id": "agent-harshit-p"},
+    {"id": "agent-kathan", "name": "Himanshu Lala", "role": "Automation / CI Engineer", "parent_id": "agent-harshit-p"},
 ]
 
 async def seed_demo_data(force_refresh_agents: bool = False):

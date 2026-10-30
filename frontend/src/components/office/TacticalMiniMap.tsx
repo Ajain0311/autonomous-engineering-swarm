@@ -53,7 +53,7 @@ export const TacticalMiniMap: React.FC<TacticalMiniMapProps> = ({
           <div className="flex items-center space-x-1.5 text-xs font-bold text-sky-400">
             <span className="w-2 h-2 rounded-full bg-sky-400 animate-ping" />
             <Crosshair className="w-3.5 h-3.5 text-sky-400" />
-            <span className="tracking-wider">E-CONNECT RADAR</span>
+            <span className="tracking-wider">WE-CONNECT RADAR</span>
           </div>
           <button
             onClick={() => {

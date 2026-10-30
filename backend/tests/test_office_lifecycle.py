@@ -29,7 +29,7 @@ EXPECTED_EMPLOYEES = [
     ("agent-kratik", "Kratik Jain", "Backend Engineer", "agent-giriraj"),
     ("agent-maan", "Maan Singh", "Frontend Engineer", "agent-giriraj"),
     ("agent-harshit-m", "Harshit Masta", "Security Engineer", "agent-aditya"),
-    ("agent-kathan", "Kathan Jain", "Automation / CI Engineer", "agent-harshit-p"),
+    ("agent-kathan", "Himanshu Lala", "Automation / CI Engineer", "agent-harshit-p"),
 ]
 
 def test_exact_eighteen_employees_in_config():

@@ -383,7 +383,7 @@ export const OfficeEnvironment: React.FC<OfficeEnvironmentProps> = ({
   const screenTex2 = useMemo(() => createCodeScreenTexture('#10b981', 'test_suite.py'), []);
   const screenTex3 = useMemo(() => createCodeScreenTexture('#c084fc', 'state_machine.rs'), []);
   const screenTex4 = useMemo(() => createCodeScreenTexture('#fb923c', 'deploy_vm.yaml'), []);
-  const whiteboardTex = useMemo(() => createWhiteboardTexture('E-CONNECT SOLUTIONS ARCHITECTURE'), []);
+  const whiteboardTex = useMemo(() => createWhiteboardTexture('WE-CONNECT SOLUTIONS ARCHITECTURE'), []);
 
   const handleZoneClick = (zone: string) => {
     gameAudio.playWhoosh();
@@ -422,12 +422,12 @@ export const OfficeEnvironment: React.FC<OfficeEnvironmentProps> = ({
       <group position={[0, 2.0, -15.9]}>
         <mesh receiveShadow>
           <boxGeometry args={[40, 4.0, 0.2]} />
-          <meshStandardMaterial color="#1e293b" roughness={0.45} metalness={0.25} />
+          <meshStandardMaterial color="#64748b" roughness={0.65} metalness={0.1} />
         </mesh>
         {[-15, -10, -5, 0, 5, 10, 15].map((x, i) => (
           <mesh key={`slat-${i}`} position={[x, 0, 0.11]}>
             <boxGeometry args={[3.8, 3.4, 0.04]} />
-            <meshStandardMaterial color="#161b22" roughness={0.6} metalness={0.3} />
+            <meshStandardMaterial color="#475569" roughness={0.7} metalness={0.15} />
           </mesh>
         ))}
         {/* Recessed Ambient Cove Light Strip */}
@@ -441,11 +441,11 @@ export const OfficeEnvironment: React.FC<OfficeEnvironmentProps> = ({
       <group position={[0, 2.0, 15.9]}>
         <mesh position={[-11, 0, 0]} receiveShadow>
           <boxGeometry args={[18, 4.0, 0.2]} />
-          <meshStandardMaterial color="#1e293b" roughness={0.45} metalness={0.25} />
+          <meshStandardMaterial color="#64748b" roughness={0.65} metalness={0.1} />
         </mesh>
         <mesh position={[11, 0, 0]} receiveShadow>
           <boxGeometry args={[18, 4.0, 0.2]} />
-          <meshStandardMaterial color="#1e293b" roughness={0.45} metalness={0.25} />
+          <meshStandardMaterial color="#64748b" roughness={0.65} metalness={0.1} />
         </mesh>
         <mesh position={[0, 1.5, 0]}>
           <boxGeometry args={[4.2, 1.0, 0.2]} />
@@ -481,7 +481,7 @@ export const OfficeEnvironment: React.FC<OfficeEnvironmentProps> = ({
         <Html position={[0, 1.45, -0.15]} center style={{ pointerEvents: 'auto' }}>
           <div className="flex flex-col items-center gap-1 pointer-events-auto select-none">
             <span className="text-[7.5px] font-mono font-bold text-sky-400 bg-slate-950/85 px-1.5 py-0.2 rounded border border-slate-700/60 uppercase tracking-tight">
-              E-Connect Gate
+              We-Connect Gate
             </span>
             {onToggleGate && (
               <button
@@ -520,7 +520,7 @@ export const OfficeEnvironment: React.FC<OfficeEnvironmentProps> = ({
       <group position={[19.9, 2.0, 0]}>
         <mesh receiveShadow>
           <boxGeometry args={[0.1, 4.0, 31.8]} />
-          <meshStandardMaterial color="#1e293b" roughness={0.45} metalness={0.25} />
+          <meshStandardMaterial color="#64748b" roughness={0.65} metalness={0.1} />
         </mesh>
       </group>
 
@@ -952,6 +952,12 @@ export const OfficeEnvironment: React.FC<OfficeEnvironmentProps> = ({
             <planeGeometry args={[3.0, 0.08]} />
             <meshStandardMaterial color="#38bdf8" emissive="#0284c7" emissiveIntensity={1.5} />
           </mesh>
+          {/* Luminous RECEPTION Desk Badge */}
+          <Html position={[0, 0.6, 0.55]} center style={{ pointerEvents: 'none' }}>
+            <div className="select-none px-3 py-0.5 rounded-lg bg-slate-950/90 border border-sky-400 text-sky-300 font-mono font-black text-[10px] tracking-widest shadow-[0_0_12px_rgba(56,189,248,0.6)] uppercase whitespace-nowrap">
+              🛎️ RECEPTION • POOJA VERMA
+            </div>
+          </Html>
 
           {/* Receptionist Desktop PC & iPad Check-In Terminal */}
           <group position={[0, 1.35, 0]}>

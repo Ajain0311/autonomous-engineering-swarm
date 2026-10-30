@@ -3,6 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { OfficeEmployeeData } from '../../types/office';
+import { speechTts } from '../../utils/speechTts';
 
 interface PlayerAvatarProps {
   isActive: boolean;
@@ -11,6 +12,9 @@ interface PlayerAvatarProps {
   controlsRef: React.MutableRefObject<any>;
   onActivateWalkMode?: () => void;
   onTalkToEmployee?: (emp: OfficeEmployeeData) => void;
+  activeDialogueEmployeeId?: string | null;
+  onNearestEmployeeChange?: (empId: string | null) => void;
+  onLeaveEmployeeZone?: (empId: string) => void;
   onToggleGate?: () => void;
   isGateOpen?: boolean;
   isAdityaGateOpen?: boolean;
@@ -30,6 +34,9 @@ export const PlayerAvatar: React.FC<PlayerAvatarProps> = ({
   controlsRef,
   onActivateWalkMode,
   onTalkToEmployee,
+  activeDialogueEmployeeId = null,
+  onNearestEmployeeChange,
+  onLeaveEmployeeZone,
   onToggleGate,
   isGateOpen = false,
   isAdityaGateOpen = false,
@@ -61,6 +68,8 @@ export const PlayerAvatar: React.FC<PlayerAvatarProps> = ({
   const [isNearAdityaGate, setIsNearAdityaGate] = useState(false);
   const [isNearGirirajGate, setIsNearGirirajGate] = useState(false);
   const [isNearConfGate, setIsNearConfGate] = useState(false);
+  const lastChatterTime = useRef<number>(0);
+  const lastChatterEmployeeId = useRef<string | null>(null);
   const [isSittingOnSofa, setIsSittingOnSofa] = useState(false);
 
   // Keyboard listeners for walking & interactions
@@ -85,12 +94,29 @@ export const PlayerAvatar: React.FC<PlayerAvatarProps> = ({
           return;
         }
 
+        // Priority 1: If close to an employee, ALWAYS open conversation dialogue!
         if (nearestEmployee) {
           if (onTalkToEmployee) {
             onTalkToEmployee(nearestEmployee);
           } else {
             onInspectEmployee(nearestEmployee);
           }
+          return;
+        }
+
+        // Priority 2: Room Gate Doors
+        if (isNearConfGate && onToggleConferenceGate) {
+          onToggleConferenceGate();
+          return;
+        }
+
+        if (isNearAdityaGate && onToggleAdityaGate) {
+          onToggleAdityaGate();
+          return;
+        }
+
+        if (isNearGirirajGate && onToggleGirirajGate) {
+          onToggleGirirajGate();
           return;
         }
 
@@ -274,7 +300,7 @@ export const PlayerAvatar: React.FC<PlayerAvatarProps> = ({
 
     // 1. Proximity to all 18 employees
     let closest: OfficeEmployeeData | null = null;
-    let minDist = 2.6;
+    let minDist = 3.8;
 
     for (const emp of employees) {
       const [ex, , ez] = emp.current_coords;
@@ -285,6 +311,110 @@ export const PlayerAvatar: React.FC<PlayerAvatarProps> = ({
       }
     }
     setNearestEmployee(closest);
+    if (onNearestEmployeeChange) {
+      onNearestEmployeeChange(closest ? closest.id : null);
+    }
+
+    // Ambient living office gossip when Baburao stands near any employee without opening dialogue
+    const now = Date.now();
+    if (closest && !activeDialogueEmployeeId && now - lastChatterTime.current > 12000) {
+      lastChatterTime.current = now;
+      lastChatterEmployeeId.current = closest.id;
+
+      const isBhupendra = closest.id === 'agent-bhupendra' || closest.name.includes('Bhupendra');
+      const isHimanshu = closest.id === 'agent-kathan' || closest.name.includes('Himanshu');
+      const isGiriraj = closest.id === 'agent-giriraj' || closest.name.includes('Giriraj');
+      const isSanjay = closest.id === 'agent-sanjay' || closest.name.includes('Sanjay');
+
+      let funnyLine = '';
+            if (isBhupendra) {
+        const bhupLines = [
+          'Bhupendra: Arre Baburao! Utha re baba utha, mereko nahi, dev walo ko utha re baba! Main to ghode bech ke so raha hu!',
+          'Bhupendra table pe lamba hoke: Baburao tera khopdi phod dunga agar neend kharab ki! Requirement gayi tel lene, samosa leke aa pehle!',
+          'Bhupendra: Baburao tu fir aa gaya checking karne? Divisha ko dekh, subah se meri shakal dekh ke pagal ho gayi hai!',
+          'Bhupendra dheere se: Khopdi tod sale ka! Baburao 25 din me paisa double karne wali scheme bata, code dev karega!',
+          'Bhupendra mast hoke: Oye Baburao veere! Chipss da packet aur thandi lassi laa de re koi, fir bataunga sprint kya hoti hai!'
+        ];
+        funnyLine = bhupLines[Math.floor(Math.random() * bhupLines.length)];
+      } else if (isHimanshu) {
+        const himLines = [
+          'Himanshu Lala: Bhai Baburao aa gaye, CI build green dikha do jaldi!',
+          'Himanshu: Baburao pipeline green hai boss, bas deployment script me thoda dahi-cheeni daalna baaki hai!',
+          'Himanshu: Sir server ka CPU 20% pe hai, sab chilled out chal raha hai, chill maro!',
+          'Himanshu: Docker container mast daud raha hai, koi issue nahi Baburao!'
+        ];
+        funnyLine = himLines[Math.floor(Math.random() * himLines.length)];
+      } else if (isGiriraj) {
+        const giriLines = [
+          'Giriraj: Oye Sanjay, Baburao check karne aaye hain, code window badi karo!',
+          'Giriraj: Baburao arch diagram ekdum solid banaya hai, pure swarm ko tight karke rakha hai!',
+          'Giriraj: Baburao veere tension na lo, Rohan aur team ko line pe laga diya hai!',
+          'Giriraj: Code review complete ho chuka hai bhai, zero technical debt!'
+        ];
+        funnyLine = giriLines[Math.floor(Math.random() * giriLines.length)];
+      } else if (isSanjay) {
+        const sanjayLines = [
+          'Sanjay Sahlot: Haan bhai operations full tight hai, Baburao ke aate hi sab serious ban jao!',
+          'Sanjay: Baburao resource allocation 100% optimum hai, sprint burn-down chart rocket ki tarah niche aa raha hai!',
+          'Sanjay: Team coordination top notch chal raha hai bhai, meeting 5 minute me wrap-up kar di!'
+        ];
+        funnyLine = sanjayLines[Math.floor(Math.random() * sanjayLines.length)];
+      } else if (closest.name.includes('Abhishek') || closest.id.includes('abhishek')) {
+        const abhiLines = [
+          'Abhishek Hingar: QA automation chal rahi hai Baburao, Ashish ko bugs hunt karne bheja hai!',
+          'Abhishek: Baburao test coverage 94% touch kar chuki hai, release ready hai!'
+        ];
+        funnyLine = abhiLines[Math.floor(Math.random() * abhiLines.length)];
+      } else if (closest.name.includes('Ashish') || closest.id.includes('ashish')) {
+        const ashLines = [
+          'Ashish Das: Baburao ek corner-case defect pakda hai, dev mundeyan nu fix karne bheja hai!',
+          'Ashish: QA report green hote hi sign-off de dunga Baburao!'
+        ];
+        funnyLine = ashLines[Math.floor(Math.random() * ashLines.length)];
+      } else if (closest.name.includes('Pooja') || closest.id.includes('pooja')) {
+        const poojaLines = [
+          'Pooja Verma: Namaste Baburao ji! Office entry registers up-to-date hain aur visitor badge ready hain!',
+          'Pooja: Baburao conference room book hai 2 baje ke liye, tea-coffee arranged!'
+        ];
+        funnyLine = poojaLines[Math.floor(Math.random() * poojaLines.length)];
+      } else {
+        const casualGossip = [
+          'Oye shhh... Baburao pass me khade hain, kaam karte raho!',
+          'Bhai aaj lunch me kya mangwaya hai? Shhh Baburao sun rahe hain!',
+          'Dekh-dekh Baburao round pe nikle hain, screen pe graph khol de!',
+          'Abhi to chai pi ke aaya hu, Baburao ne dekh liya to bolenge kaam nahi ho raha!',
+          'Baburao desk ke peeche khade hain, terminal me git status continuously type karo!',
+          'Bhai code format maar jaldi, Baburao screen dekh rahe hain!',
+          'Lagta hai Baburao review lene aaye hain, sab commits squash kar do!',
+          'Baburao ki presence dekhte hi saare unit test ek jhatke me pass ho gaye!',
+          'Shhh chup ho jao! Baburao inspection mode me hain, koi alt-tab mat karna!'
+        ];
+        funnyLine = casualGossip[Math.floor(Math.random() * casualGossip.length)];
+      }
+
+      speechTts.speak(funnyLine, { isPunjabi: true, rate: 1.02 });
+    }
+
+    // If talking to an employee and player moves away (> 3.5m)
+    if (activeDialogueEmployeeId) {
+      const activeSpeaker = employees.find((e) => e.id === activeDialogueEmployeeId);
+      if (activeSpeaker) {
+        const [ax, , az] = activeSpeaker.current_coords;
+        const distToSpeaker = Math.hypot(playerPos.current.x - ax, playerPos.current.z - az);
+        if (distToSpeaker > 3.6) {
+          if (activeDialogueEmployeeId === 'agent-aditya' || activeSpeaker.name.includes('Aditya')) {
+            // Chief Orchestrator: Witty Punjabi reaction when player leaves!
+            speechTts.speak('Oye Baburao veere! Tussi jaa rahe ho? Tussi na jao!', { isPunjabi: true });
+          } else {
+            // Normal employees immediately stop talking!
+            speechTts.stop();
+          }
+          if (onLeaveEmployeeZone) {
+            onLeaveEmployeeZone(activeDialogueEmployeeId);
+          }
+        }
+      }
+    }
 
     // 2. Proximity to Lounge Sofa ([-12.5, 0, 10.5])
     const distSofa = Math.hypot(playerPos.current.x - (-12.5), playerPos.current.z - 10.5);
@@ -304,7 +434,7 @@ export const PlayerAvatar: React.FC<PlayerAvatarProps> = ({
 
     // 6. Proximity to Conference Room Doors ([-9.15, 0, 0])
     const distConf = Math.hypot(playerPos.current.x - (-9.15), playerPos.current.z - 0);
-    setIsNearConfGate(distConf < 2.5);
+    setIsNearConfGate(distConf < 3.8);
   });
 
   return (
@@ -319,12 +449,12 @@ export const PlayerAvatar: React.FC<PlayerAvatarProps> = ({
         }
       }}
     >
-      {/* Chotu Kumar Owner Identification Badge (Crisp Readable 11px) */}
+      {/* Baburao Owner Identification Badge (Crisp Readable 11px) */}
       <Html position={[0, 1.95, 0]} center style={{ pointerEvents: 'none' }}>
         <div className="flex flex-col items-center select-none font-sans">
           <div className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 text-[11px] font-black uppercase tracking-wider border border-yellow-200 shadow-md flex items-center space-x-1.5 whitespace-nowrap">
             <span>👑</span>
-            <span>CHOTU KUMAR (OWNER)</span>
+            <span>BABURAO (OWNER)</span>
           </div>
         </div>
       </Html>

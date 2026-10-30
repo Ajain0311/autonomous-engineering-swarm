@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, ShieldCheck, Eye, Terminal, Edit3, Trash2, Zap, Award, CheckCircle2 } from 'lucide-react';
+import { X, ShieldCheck, Eye, Terminal, Edit3, Trash2, Zap, Award, CheckCircle2, MessageSquare } from 'lucide-react';
 import { OfficeEmployeeData } from '../../types/office';
 import { Task } from '../../types';
 import { gameAudio } from '../../utils/gameAudio';
@@ -14,6 +14,7 @@ interface EmployeeInspectorCardProps {
   isFollowing: boolean;
   onOpenEdit: (emp: OfficeEmployeeData) => void;
   onDeleteEmployee: (empId: string) => void;
+  onTalkToEmployee?: (emp: OfficeEmployeeData) => void;
 }
 
 export const EmployeeInspectorCard: React.FC<EmployeeInspectorCardProps> = ({
@@ -25,7 +26,8 @@ export const EmployeeInspectorCard: React.FC<EmployeeInspectorCardProps> = ({
   onInspectTask,
   isFollowing,
   onOpenEdit,
-  onDeleteEmployee
+  onDeleteEmployee,
+  onTalkToEmployee
 }) => {
   if (!employee) return null;
 
@@ -176,6 +178,20 @@ export const EmployeeInspectorCard: React.FC<EmployeeInspectorCardProps> = ({
           </div>
         )}
       </div>
+
+      {/* Talk in Punjabi / Indian Voice Button */}
+      {onTalkToEmployee && (
+        <button
+          onClick={() => {
+            gameAudio.playClick();
+            onTalkToEmployee(employee);
+          }}
+          className="w-full py-2 mb-2 rounded-xl text-xs font-mono font-black transition shadow-lg flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 shadow-amber-500/30 hover:shadow-[0_0_15px_rgba(245,158,11,0.6)] active:scale-95"
+        >
+          <MessageSquare className="w-4 h-4" />
+          <span>TALK (PUNJABI / INDIAN VOICE)</span>
+        </button>
+      )}
 
       {/* Follow Camera Action Button */}
       <button

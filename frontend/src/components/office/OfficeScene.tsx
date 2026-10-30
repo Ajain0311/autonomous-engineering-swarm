@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, ContactShadows, Grid } from '@react-three/drei';
 import * as THREE from 'three';
@@ -242,6 +242,9 @@ interface OfficeSceneProps {
   isGateOpen?: boolean;
   onToggleGate?: () => void;
   onTalkToEmployee?: (emp: OfficeEmployeeData) => void;
+  activeDialogueEmployeeId?: string | null;
+  nearestEmployeeId?: string | null;
+  onLeaveEmployeeZone?: (empId: string) => void;
   isFullscreen?: boolean;
   onToggleFullscreen?: () => void;
   isAdityaGateOpen?: boolean;
@@ -270,6 +273,9 @@ export const OfficeScene: React.FC<OfficeSceneProps> = ({
   isGateOpen = false,
   onToggleGate,
   onTalkToEmployee,
+  activeDialogueEmployeeId = null,
+  nearestEmployeeId = null,
+  onLeaveEmployeeZone,
   isFullscreen = false,
   onToggleFullscreen,
   isAdityaGateOpen = false,
@@ -282,6 +288,7 @@ export const OfficeScene: React.FC<OfficeSceneProps> = ({
   onToggleRestroomGate
 }) => {
   const controlsRef = useRef<any>(null);
+  const [currentNearestId, setCurrentNearestId] = useState<string | null>(null);
 
   // Zoom In (+25% closer)
   const handleZoomIn = useCallback(() => {
@@ -378,7 +385,7 @@ export const OfficeScene: React.FC<OfficeSceneProps> = ({
           }}
         />
 
-        {/* Dynamic Walk-In Player Avatar (Chotu Kumar - Company Owner) */}
+        {/* Dynamic Walk-In Player Avatar (Baburao - Company Owner) */}
         <PlayerAvatar
           isActive={isWalkMode}
           employees={employees}
@@ -386,6 +393,9 @@ export const OfficeScene: React.FC<OfficeSceneProps> = ({
           controlsRef={controlsRef}
           onActivateWalkMode={onToggleWalkMode}
           onTalkToEmployee={onTalkToEmployee}
+          activeDialogueEmployeeId={activeDialogueEmployeeId}
+          onNearestEmployeeChange={setCurrentNearestId}
+          onLeaveEmployeeZone={onLeaveEmployeeZone}
           onToggleGate={onToggleGate}
           isGateOpen={isGateOpen}
           isAdityaGateOpen={isAdityaGateOpen}
@@ -479,6 +489,7 @@ export const OfficeScene: React.FC<OfficeSceneProps> = ({
             isSelected={selectedEmployeeId === emp.id}
             onSelect={onSelectEmployee}
             speedMultiplier={speedMultiplier}
+            isOwnerNearby={isWalkMode && (currentNearestId === emp.id || activeDialogueEmployeeId === emp.id)}
           />
         ))}
       </Canvas>

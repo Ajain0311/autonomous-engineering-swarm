@@ -58,9 +58,9 @@ const DEFAULT_OFFICE_EMPLOYEES: OfficeEmployeeData[] = [
     tasks_completed: 14,
     tasks_failed: 0,
     model: 'Gemini 1.5 Pro',
-    desk_id: 'desk-sanjay',
-    home_coords: [-7, 0, -9.38],
-    current_coords: [-7, 0, -9.38],
+    desk_id: 'cabin-giriraj',
+    home_coords: [13, 0, -9.32],
+    current_coords: [13, 0, -9.32],
     target_coords: null,
     rotation_y: Math.PI,
     action: 'SIT',
@@ -86,9 +86,9 @@ const DEFAULT_OFFICE_EMPLOYEES: OfficeEmployeeData[] = [
     tasks_completed: 24,
     tasks_failed: 0,
     model: 'Gemini 1.5 Pro',
-    desk_id: 'cabin-giriraj',
-    home_coords: [13, 0, -9.32],
-    current_coords: [13, 0, -9.32],
+    desk_id: 'desk-sanjay',
+    home_coords: [-7, 0, -9.38],
+    current_coords: [-7, 0, -9.38],
     target_coords: null,
     rotation_y: Math.PI,
     action: 'SIT',
@@ -106,7 +106,7 @@ const DEFAULT_OFFICE_EMPLOYEES: OfficeEmployeeData[] = [
   {
     id: 'agent-bhupendra',
     name: 'Bhupendra Jingar',
-    role: 'Business Analyst',
+    role: 'Chief Bakchod & Lazy BA',
     department: 'Product & Design',
     parent_id: 'agent-aditya',
     status: 'IDLE',
@@ -114,11 +114,11 @@ const DEFAULT_OFFICE_EMPLOYEES: OfficeEmployeeData[] = [
     tasks_completed: 12,
     tasks_failed: 0,
     model: 'Gemini 1.5 Pro',
-    desk_id: 'desk-bhupendra',
-    home_coords: [-13.5, 0, 1.2],
-    current_coords: [-13.5, 0, 1.2],
+    desk_id: 'desk-ba-table',
+    home_coords: [-15.1, 0, -1.2],
+    current_coords: [-15.1, 0, -1.2],
     target_coords: null,
-    rotation_y: Math.PI,
+    rotation_y: 0,
     action: 'SIT',
     appearance: {
       hairStyle: 'fade',
@@ -143,8 +143,8 @@ const DEFAULT_OFFICE_EMPLOYEES: OfficeEmployeeData[] = [
     tasks_failed: 0,
     model: 'Gemini 1.5 Pro',
     desk_id: 'desk-abhishek',
-    home_coords: [12.2, 0, 1.18],
-    current_coords: [12.2, 0, 1.18],
+    home_coords: [11.8, 0, 1.18],
+    current_coords: [11.8, 0, 1.18],
     target_coords: null,
     rotation_y: Math.PI,
     action: 'SIT',
@@ -171,8 +171,8 @@ const DEFAULT_OFFICE_EMPLOYEES: OfficeEmployeeData[] = [
     tasks_failed: 1,
     model: 'Gemini 1.5 Flash',
     desk_id: 'desk-ashish',
-    home_coords: [13.8, 0, 1.18],
-    current_coords: [13.8, 0, 1.18],
+    home_coords: [14.0, 0, 1.18],
+    current_coords: [14.0, 0, 1.18],
     target_coords: null,
     rotation_y: Math.PI,
     action: 'SIT',
@@ -330,17 +330,17 @@ const DEFAULT_OFFICE_EMPLOYEES: OfficeEmployeeData[] = [
   {
     id: 'agent-divisha',
     name: 'Divisha Joshi',
-    role: 'Documentation Engineer',
-    department: 'Core Engineering',
-    parent_id: 'agent-giriraj',
+    role: 'Documentation Engineer & BA Specialist',
+    department: 'Product & Design',
+    parent_id: 'agent-aditya',
     status: 'IDLE',
     current_task_id: null,
     tasks_completed: 13,
     tasks_failed: 0,
     model: 'Gemini 1.5 Flash',
-    desk_id: 'desk-divisha',
-    home_coords: [0, 0, 6.62],
-    current_coords: [0, 0, 6.62],
+    desk_id: 'desk-ba-table',
+    home_coords: [-15.1, 0, 1.2],
+    current_coords: [-15.1, 0, 1.2],
     target_coords: null,
     rotation_y: Math.PI,
     action: 'SIT',
@@ -497,7 +497,7 @@ const DEFAULT_OFFICE_EMPLOYEES: OfficeEmployeeData[] = [
   },
   {
     id: 'agent-kathan',
-    name: 'Kathan Jain',
+    name: 'Himanshu Lala',
     role: 'Automation / CI Engineer',
     department: 'DevOps & Cloud',
     parent_id: 'agent-harshit-p',
@@ -581,7 +581,11 @@ const SOFA_SLOTS: [number, number, number][] = [
   [-12.5, 0, 10.55],
   [-11.55, 0, 10.55]
 ];
-const RESTROOM_COORDS: [number, number, number] = [-18.5, 0, 14.5];
+const RESTROOM_SLOTS: [number, number, number][] = [
+  [-17.6, 0, 14.5],
+  [-18.5, 0, 14.5],
+  [-19.4, 0, 14.5]
+];
 
 interface ActiveBreakItem {
   employeeId: string;
@@ -703,10 +707,12 @@ export const Office3DView: React.FC<Office3DViewProps> = ({ tasks, onSelectTaskI
           );
           const freeSofaSlots = [0, 1, 2].filter((s) => !occupiedSofaSlots.has(s));
 
-          // Eligible: idle, no active task, not receptionist, not already on break, not moving
+          // Eligible: idle, no active task, not receptionist, NOT Aditya (Chief never leaves executive cabin), not on break, not moving
           const eligible = employees.filter(
             (e) =>
               e.id !== 'agent-pooja' &&
+              e.id !== 'agent-aditya' &&
+              !e.name.includes('Aditya') &&
               e.status === 'IDLE' &&
               !e.current_task_id &&
               !stillActive.some((b) => b.employeeId === e.id) &&
@@ -721,10 +727,23 @@ export const Office3DView: React.FC<Office3DViewProps> = ({ tasks, onSelectTaskI
               const slotIdx = freeSofaSlots[0];
               const destCoords = SOFA_SLOTS[slotIdx];
               const sofaPhrases = [
-                'Chai break time! Sofa pe thoda relax kar leta hu.',
-                'Sprint task wrap ho gaya, thoda lounge me chill karte hain.',
-                'Coffee pee ke next PR review plan karenge.',
-                '5 minute break on lounge sofa, refresh hoke aate hain.'
+                'Chai break time! Sofa pe thoda aish kar leta hu.',
+                'Bhupendra bolta hai: Bhai sprint document kal banega, abhi aankh band karke chill maro!',
+                'Himanshu Lala CI pipeline chhod ke chai ke nashe kar raha hai!',
+                'Baburao dekh na le, chup chaap phone scroll kar leta hu!',
+                'AC chal raha hai mast, code to hota rahega kal subah!',
+                '5 minute break bola tha, ab aadhe ghante se sofa pe betha hu!',
+                'Bhupendra Jingar: Main to BA hu mera kaam bas meeting me haan bolna hai, code dev kare!',
+                'Samosa party kab hogi? Baburao se budget approve karwao pehle!',
+                'Ashish bol raha hai bug mil gaya... maine bola tu sofa pe aake baith pehle chai pee!',
+                'Binod Kumar to bina bolte hi sofa pe lamba ho gaya re!',
+                'Deployment success ho gaya, ab agle 2 ghante sirf coffee aur reels!',
+                'Kratik bhai ne bola security audit pass ho gaya, ab tension free lassi peeo!',
+                'Git push karke sofa pe aane ka sukoon hi alag hai!',
+                'Pooja reception pe sabko entry de rahi hai, hum yahan aaram farmate hain!',
+                'Client demo cancel ho gaya! Rabba mehr kare, sofa pe aaram ki jeet hui!',
+                'Esha keh rahi hai UI pixel-perfect ban gaya, ab thoda coffee sipp karte hain.',
+                'Rohan ne code merge maar diya, ab server bhadke ya bache, apun sofa pe mast hai!'
               ];
               const speechText = sofaPhrases[Math.floor(Math.random() * sofaPhrases.length)];
 
@@ -771,13 +790,25 @@ export const Office3DView: React.FC<Office3DViewProps> = ({ tasks, onSelectTaskI
               const washroomPhrases = [
                 'Quick washroom break, 2 minute me wapas desk pe!',
                 'Paani pee ke aur fresh hoke aata hu.',
-                'Bas 2 minute me refresh hoke coding start karta hu.'
+                'Bas 2 minute me refresh hoke coding start karta hu.',
+                'Thanda paani muh pe maar ke neend bhagata hu bhai, code boht heavy chal raha hai!',
+                'Washroom ke aaine me dekh ke bol raha hu: tu kar sakta hai bug fix!',
+                'Chotu Kumar bol raha tha bathroom ka geyser mast hai, fresh ho ke aao!',
+                'Sirf 2 ghante me 4 cup chai pee li, washroom to aana hi tha!'
               ];
               const speechText = washroomPhrases[Math.floor(Math.random() * washroomPhrases.length)];
+
+              const occupiedRestroomSlots = new Set(
+                stillActive.filter((b) => b.type === 'restroom').map((b) => b.slotIndex ?? 1)
+              );
+              const freeRestSlots = [0, 1, 2].filter((s) => !occupiedRestroomSlots.has(s));
+              const restSlotIdx = freeRestSlots.length > 0 ? freeRestSlots[0] : 1;
+              const destRestCoords = RESTROOM_SLOTS[restSlotIdx];
 
               stillActive.push({
                 employeeId: chosen.id,
                 type: 'restroom',
+                slotIndex: restSlotIdx,
                 expiresAt: now + 14000
               });
 
@@ -786,7 +817,7 @@ export const Office3DView: React.FC<Office3DViewProps> = ({ tasks, onSelectTaskI
                   if (emp.id === chosen.id) {
                     return {
                       ...emp,
-                      target_coords: RESTROOM_COORDS,
+                      target_coords: destRestCoords,
                       action: 'WALK'
                     };
                   }
@@ -800,7 +831,7 @@ export const Office3DView: React.FC<Office3DViewProps> = ({ tasks, onSelectTaskI
                     if (emp.id === chosen.id) {
                       return {
                         ...emp,
-                        current_coords: RESTROOM_COORDS,
+                        current_coords: destRestCoords,
                         target_coords: null,
                         action: 'TALK',
                         rotation_y: -Math.PI / 2
@@ -961,11 +992,12 @@ export const Office3DView: React.FC<Office3DViewProps> = ({ tasks, onSelectTaskI
           triggerSpeech(data.speech.speaker_id, data.speech.speaker_name, data.speech.text, 5500);
         }
 
-        // Animate primary character target coords & action
+        // Animate primary character target coords & action (Aditya Jain NEVER leaves his cabin)
         setEmployees((prev) =>
           prev.map((emp) => {
             if (emp.id === data.primary_agent_id) {
-              const targetCoords = WAYPOINTS[data.target_location] || emp.home_coords;
+              const isAditya = emp.id === 'agent-aditya' || emp.name.includes('Aditya');
+              const targetCoords = isAditya ? emp.home_coords : (WAYPOINTS[data.target_location] || emp.home_coords);
               return {
                 ...emp,
                 target_coords: targetCoords,
@@ -1274,7 +1306,17 @@ export const Office3DView: React.FC<Office3DViewProps> = ({ tasks, onSelectTaskI
         onToggleWalkMode={() => setIsWalkMode(!isWalkMode)}
         isGateOpen={isGateOpen}
         onToggleGate={() => setIsGateOpen((prev) => !prev)}
+        isAdityaGateOpen={isAdityaGateOpen}
+        onToggleAdityaGate={handleToggleAdityaGate}
+        isGirirajGateOpen={isGirirajGateOpen}
+        onToggleGirirajGate={handleToggleGirirajGate}
+        isConferenceGateOpen={isConferenceGateOpen}
+        onToggleConferenceGate={handleToggleConferenceGate}
+        isRestroomGateOpen={isRestroomGateOpen}
+        onToggleRestroomGate={handleToggleRestroomGate}
         onTalkToEmployee={(emp) => setActiveDialogueEmployee(emp)}
+        activeDialogueEmployeeId={activeDialogueEmployee?.id || null}
+        onLeaveEmployeeZone={() => setActiveDialogueEmployee(null)}
         onToggleFullscreen={toggleFullscreen}
         isFullscreen={isFullscreen}
       />
@@ -1335,7 +1377,8 @@ export const Office3DView: React.FC<Office3DViewProps> = ({ tasks, onSelectTaskI
           isFollowing={followedEmployeeId === selectedEmployee.id}
           onOpenEdit={(emp) => setEditingEmployee(emp)}
           onDeleteEmployee={handleDeleteEmployee}
-        />
+            onTalkToEmployee={(emp) => setActiveDialogueEmployee(emp)}
+          />
       )}
 
       {/* Bottom-Right: Live Speech and Dialogue Feed */}
@@ -1365,7 +1408,7 @@ export const Office3DView: React.FC<Office3DViewProps> = ({ tasks, onSelectTaskI
         existingEmployees={employees}
       />
 
-      {/* Interactive Speaker Dialogue between Owner Chotu Kumar and Employees */}
+      {/* Interactive Speaker Dialogue between Owner Baburao and Employees */}
       {activeDialogueEmployee && (
         <ChotuKumarDialogueModal
           employee={activeDialogueEmployee}
